@@ -1,0 +1,11 @@
+services:
+  - type: web
+    name: spring-boot-backend
+    env: java
+    branch: main
+    rootDir: backend
+    buildCommand: ./mvnw clean install
+    startCommand: java -jar target/*.jar
+    envVars:
+      - key: PORT
+        value: 8080
