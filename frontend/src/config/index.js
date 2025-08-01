@@ -1,16 +1,13 @@
-// src/config/index.js
+// config/index.js
 
-// Safe environment variable getter
 const getEnvVar = (key, defaultValue = "") => {
   try {
-    // Check if we're in a browser environment with webpack-injected env vars
-    if (typeof window !== "undefined" && window.__ENV__) {
-      return window.__ENV__[key] || defaultValue;
+    if (typeof import.meta !== "undefined" && import.meta.env) {
+      return import.meta.env[key] ?? defaultValue;
     }
 
-    // Check for process.env (Node.js or webpack DefinePlugin)
     if (typeof process !== "undefined" && process.env) {
-      return process.env[key] || defaultValue;
+      return process.env[key] ?? defaultValue;
     }
 
     return defaultValue;
@@ -20,50 +17,28 @@ const getEnvVar = (key, defaultValue = "") => {
   }
 };
 
-// Application configuration
 export const config = {
-  // API Configuration
   api: {
-    baseUrl: getEnvVar("REACT_APP_API_BASE_URL", "http://localhost:8080/api"),
-    timeout: parseInt(getEnvVar("REACT_APP_API_TIMEOUT", "10000")),
-    tokenKey: getEnvVar("REACT_APP_TOKEN_KEY", "token"),
+    baseUrl: getEnvVar("VITE_API_BASE_URL"),
+    timeout: parseInt(getEnvVar("VITE_API_TIMEOUT", "10000")),
+    tokenKey: getEnvVar("VITE_TOKEN_KEY", "token"),
   },
 
-  // Auth Configuration
   auth: {
-    timeout: parseInt(getEnvVar("REACT_APP_AUTH_TIMEOUT", "15000")),
-    tokenExpiryBuffer: 5 * 60 * 1000, // 5 minutes
-    refreshTokenKey: getEnvVar("REACT_APP_REFRESH_TOKEN_KEY", "refreshToken"),
+    timeout: parseInt(getEnvVar("VITE_AUTH_TIMEOUT", "15000")),
+    tokenExpiryBuffer: 5 * 60 * 1000,
+    refreshTokenKey: getEnvVar("VITE_REFRESH_TOKEN_KEY", "refreshToken"),
   },
 
-  // App Configuration
   app: {
-    name: getEnvVar("REACT_APP_NAME", "My App"),
-    version: getEnvVar("REACT_APP_VERSION", "1.0.0"),
-    environment: getEnvVar("NODE_ENV", "development"),
+    name: getEnvVar("VITE_APP_NAME", "My App"),
+    version: getEnvVar("VITE_APP_VERSION", "1.0.0"),
+    environment: getEnvVar("VITE_ENVIRONMENT", "development"),
   },
 
-  // Feature flags
   features: {
-    enableLogging: getEnvVar("REACT_APP_ENABLE_LOGGING", "true") === "true",
-    enableAnalytics:
-      getEnvVar("REACT_APP_ENABLE_ANALYTICS", "false") === "true",
-    enableDebugMode: getEnvVar("REACT_APP_DEBUG_MODE", "false") === "true",
+    enableLogging: getEnvVar("VITE_ENABLE_LOGGING", "true") === "true",
+    enableAnalytics: getEnvVar("VITE_ENABLE_ANALYTICS", "false") === "true",
+    enableDebugMode: getEnvVar("VITE_DEBUG_MODE", "false") === "true",
   },
 };
-
-// Development mode checker
-export const isDevelopment = () => config.app.environment === "development";
-
-// Production mode checker
-export const isProduction = () => config.app.environment === "production";
-
-// Export individual configs for convenience
-export const {
-  api: apiConfig,
-  auth: authConfig,
-  app: appConfig,
-  features,
-} = config;
-
-export default config;

@@ -1,14 +1,16 @@
+// Fixed api.js
 import axios from "axios";
 import { apiConfig, features, isDevelopment } from "../config.js";
 
 // Public endpoints that don't require authentication
 const PUBLIC_ENDPOINTS = [
-  "/api/auth/login",
-  "/api/auth/signup",
-  "/api/auth/register",
-  "/api/auth/forgot-password",
-  "/api/auth/reset-password",
-  "/api/auth/verify-email",
+  "/auth/login",
+  "/auth/signup",
+  "/auth/register",
+  "/auth/forgot-password",
+  "/auth/reset-password",
+  "/auth/verify-email",
+  "/products", // Remove /api prefix since it's in baseURL
 ];
 
 // Methods that need Content-Type
@@ -16,7 +18,7 @@ const CONTENT_TYPE_METHODS = ["post", "put", "patch"];
 
 // Axios instance
 const API = axios.create({
-  baseURL: apiConfig.baseUrl,
+  baseURL: apiConfig.baseUrl, // Should be "http://localhost:8080/api"
   timeout: apiConfig.timeout || 10000,
   headers: {
     "Content-Type": "application/json",
@@ -35,8 +37,19 @@ const getStoredToken = () => {
   }
 };
 
+// Fixed: More precise endpoint matching
 const isPublicEndpoint = (url = "") => {
-  return PUBLIC_ENDPOINTS.some((endpoint) => url.includes(endpoint));
+  // Remove baseURL part if present to get just the endpoint
+  const endpoint = url.replace(apiConfig.baseUrl, "");
+
+  return PUBLIC_ENDPOINTS.some((publicEndpoint) => {
+    // Exact match or starts with the endpoint followed by query params
+    return (
+      endpoint === publicEndpoint ||
+      endpoint.startsWith(publicEndpoint + "?") ||
+      endpoint.startsWith(publicEndpoint + "/")
+    );
+  });
 };
 
 const requiresContentType = (method = "") => {
@@ -58,6 +71,7 @@ API.interceptors.request.use(
           isPublic,
           hasToken: !!token,
           fullUrl: config.baseURL + config.url,
+          endpoint: config.url.replace(config.baseURL || "", ""),
         });
       }
 
@@ -75,7 +89,7 @@ API.interceptors.request.use(
             `Bearer ${token.substring(0, 20)}...`
           );
         }
-      } else if (!isPublic && features.enableLogging) {
+      } else if (!isPublic && !token && features.enableLogging) {
         console.warn("No token available for protected route:", config.url);
       }
 
@@ -125,6 +139,7 @@ API.interceptors.response.use(
             status,
             message: data?.message || error.message,
             data,
+            headers: error.response.headers,
           }
         );
       }
@@ -142,6 +157,13 @@ API.interceptors.response.use(
         case 403:
           if (features.enableLogging) {
             console.error("Forbidden:", data?.message || "Access denied");
+            console.error("Request details:", {
+              url: config.url,
+              method: config.method,
+              headers: config.headers,
+              isPublic: isPublicEndpoint(config.url),
+              hasAuthHeader: !!config.headers.Authorization,
+            });
           }
           break;
         case 404:
@@ -219,6 +241,21 @@ export const apiHelpers = {
       ...headers,
     },
   }),
+  // Helper to test endpoints
+  testEndpoint: async (endpoint) => {
+    try {
+      const response = await API.get(endpoint);
+      console.log(`✅ ${endpoint} - Success:`, response.status);
+      return response;
+    } catch (error) {
+      console.error(
+        `❌ ${endpoint} - Error:`,
+        error.response?.status,
+        error.message
+      );
+      throw error;
+    }
+  },
 };
 
 export default API;

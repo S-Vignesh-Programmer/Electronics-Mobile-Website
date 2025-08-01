@@ -1,4 +1,4 @@
-// src/pages/Home.jsx
+// Fixed Home.jsx - Updated fetchProducts function
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import API from "../services/api";
 
@@ -30,15 +30,13 @@ const Home = () => {
     try {
       setLoading(true);
       setError(null);
-      console.log("Fetching products from backend...");
 
-      // Fetch products from your backend API
+      // Use just "/products" since "/api" is in baseURL
       const response = await API.get("/products");
 
       if (response && response.data) {
-        console.log("Products fetched successfully:", response.data);
 
-        // Handle different response formats from backend
+        // Handle different response structures
         let productsData = [];
         if (Array.isArray(response.data)) {
           productsData = response.data;
@@ -49,17 +47,77 @@ const Home = () => {
           productsData = response.data.products;
         } else if (response.data.data && Array.isArray(response.data.data)) {
           productsData = response.data.data;
+        } else {
+          console.warn("Unexpected response structure:", response.data);
+          productsData = [];
         }
 
+        console.log("Processed products data:", productsData);
         setProducts(productsData);
+
+        if (productsData.length === 0) {
+          setError("No products available at the moment.");
+        }
       } else {
         throw new Error("No products data received from backend");
       }
     } catch (err) {
       console.error("Failed to fetch products:", err);
-      setError("Failed to load products. Please try again.");
+
+      // Detailed error logging
+      const errorDetails = {
+        message: err.message,
+        status: err.response?.status,
+        statusText: err.response?.statusText,
+        data: err.response?.data,
+        url: err.config?.url,
+        method: err.config?.method,
+        headers: err.config?.headers,
+      };
+
+      console.error("Error details:", errorDetails);
+
+      // Set user-friendly error messages based on status
+      let errorMessage = "Failed to load products. Please try again.";
+
+      if (err.response?.status === 403) {
+        errorMessage =
+          "Access denied. You may need to log in to view products.";
+      } else if (err.response?.status === 404) {
+        errorMessage =
+          "Products endpoint not found. Please check your server configuration.";
+      } else if (err.response?.status === 500) {
+        errorMessage = "Server error. Please try again later.";
+      } else if (!err.response) {
+        errorMessage =
+          "Cannot connect to server. Please check your internet connection.";
+      }
+
+      setError(errorMessage);
     } finally {
       setLoading(false);
+    }
+  };
+
+  // Test function to debug API endpoints
+  const testApiEndpoints = async () => {
+    console.log("Testing API endpoints...");
+
+    const endpoints = [
+      "/products",
+      "/api/products", // This might be wrong if baseURL already has /api
+    ];
+
+    for (const endpoint of endpoints) {
+      try {
+        const response = await API.get(endpoint);
+      } catch (error) {
+        console.error(
+          `❌ ${endpoint} - Error:`,
+          error.response?.status,
+          error.message
+        );
+      }
     }
   };
 
@@ -84,7 +142,7 @@ const Home = () => {
     let filtered = products.filter((product) => {
       // Search filter
       const matchesSearch =
-        product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        product.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         (product.description &&
           product.description.toLowerCase().includes(searchTerm.toLowerCase()));
 
@@ -120,16 +178,20 @@ const Home = () => {
     // Sort products
     switch (sortBy) {
       case "price-low":
-        filtered.sort((a, b) => parseFloat(a.price) - parseFloat(b.price));
+        filtered.sort(
+          (a, b) => parseFloat(a.price || 0) - parseFloat(b.price || 0)
+        );
         break;
       case "price-high":
-        filtered.sort((a, b) => parseFloat(b.price) - parseFloat(a.price));
+        filtered.sort(
+          (a, b) => parseFloat(b.price || 0) - parseFloat(a.price || 0)
+        );
         break;
       case "name-asc":
-        filtered.sort((a, b) => a.name.localeCompare(b.name));
+        filtered.sort((a, b) => (a.name || "").localeCompare(b.name || ""));
         break;
       case "name-desc":
-        filtered.sort((a, b) => b.name.localeCompare(a.name));
+        filtered.sort((a, b) => (b.name || "").localeCompare(a.name || ""));
         break;
       default:
         break;
@@ -154,6 +216,26 @@ const Home = () => {
     productsLoadedRef.current = false;
     fetchProducts();
   };
+
+  // Debug function - can be called from browser console
+  window.debugAPI = {
+    testEndpoints: testApiEndpoints,
+    fetchProducts,
+    checkToken: () => {
+      const token = localStorage.getItem("authToken"); // or whatever your token key is
+      console.log(
+        "Current token:",
+        token ? `${token.substring(0, 20)}...` : "No token"
+      );
+      return token;
+    },
+    apiConfig: () => {
+      console.log("API Base URL:", API.defaults.baseURL);
+      console.log("Default headers:", API.defaults.headers);
+    },
+  };
+
+  // ... rest of your component remains the same (LazyImage, ProductSkeleton, JSX)
 
   // Lazy Loading Image Component
   const LazyImage = ({ src, alt, className, priority = false }) => {
@@ -511,7 +593,7 @@ const Home = () => {
                     d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
                   />
                 </svg>
-                <p className="text-red-700">{error}</p>
+                <p className="text-red-700 flex-1">{error}</p>
                 <button
                   onClick={retryLoadProducts}
                   className="ml-auto px-3 py-1 bg-red-100 hover:bg-red-200 text-red-700 text-sm font-medium rounded transition-colors duration-200"
@@ -586,28 +668,29 @@ const Home = () => {
                           <div className="relative">
                             <LazyImage
                               src={product.imageUrl || product.image}
-                              alt={product.name}
+                              alt={product.name || "Product"}
                               className="w-full h-56 object-cover group-hover:scale-105 transition-transform duration-300"
                             />
                             <div className="absolute top-4 right-4">
                               <div className="bg-white/90 backdrop-blur-sm px-2 py-1 rounded-full text-xs font-medium text-gray-700">
-                                {product.category}
+                                {product.category || "General"}
                               </div>
                             </div>
                           </div>
 
                           <div className="p-6">
                             <h3 className="text-lg font-semibold text-gray-900 mb-2 group-hover:text-blue-600 transition-colors duration-200">
-                              {product.name}
+                              {product.name || "Unnamed Product"}
                             </h3>
                             <p className="text-gray-600 text-sm mb-4 line-clamp-2">
-                              {product.description}
+                              {product.description ||
+                                "No description available"}
                             </p>
 
                             <div className="flex items-center justify-between">
                               <div className="text-2xl font-bold text-gray-900">
                                 ₹
-                                {parseInt(product.price).toLocaleString(
+                                {parseInt(product.price || 0).toLocaleString(
                                   "en-IN"
                                 )}
                               </div>
@@ -741,4 +824,5 @@ const Home = () => {
     </div>
   );
 };
+
 export default Home;
