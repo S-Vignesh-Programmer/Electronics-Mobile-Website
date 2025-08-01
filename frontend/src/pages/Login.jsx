@@ -1,6 +1,6 @@
 // src/pages/Login.jsx
 import { useState } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { Link } from "react-router-dom"; // REMOVED useNavigate
 import API from "../services/api";
 import { useAuth } from "../context/AuthContext";
 
@@ -9,7 +9,7 @@ export default function Login() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [showPassword, setShowPassword] = useState(false);
-  const navigate = useNavigate();
+  // REMOVED navigate declaration
   const { login } = useAuth();
 
   const handleSubmit = async (e) => {
@@ -19,7 +19,7 @@ export default function Login() {
       setError(null);
       const res = await API.post("/auth/login", form);
       login(res.data.token);
-      navigate("/");
+      // REMOVED navigate("/") - routing will handle this automatically
     } catch (err) {
       console.error("Login failed", err);
       setError(
@@ -277,7 +277,7 @@ export default function Login() {
           </form>
         </div>
 
-        {/* Sign Up Link - FIXED: Changed from /register to /signup */}
+        {/* Sign Up Link */}
         <div className="text-center">
           <p className="text-sm text-gray-600">
             Don't have an account?{" "}
