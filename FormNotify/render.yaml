@@ -1,11 +1,17 @@
 services:
   - type: web
-    name: spring-boot-backend
-    env: java
+    name: formnotify-backend
+    env: docker
+    plan: free
     branch: main
-    rootDir: backend
-    buildCommand: ./mvnw clean install
-    startCommand: java -jar target/*.jar
+    rootDir: FormNotify
+    dockerfilePath: ./Dockerfile
     envVars:
       - key: PORT
         value: 8080
+      - key: MONGODB_URI
+        value: mongodb+srv://username:password@cluster.mongodb.net/yourdbname
+      - key: JWT_SECRET
+        value: V1ckyS3cur3T0kenForJWT@2025
+      - key: FRONTEND_ORIGIN
+        value: http://localhost:3000
