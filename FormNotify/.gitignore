@@ -1,0 +1,50 @@
+# === Java / Spring Boot ===
+target/
+*.class
+*.jar
+*.war
+*.log
+
+# === Maven ===
+.mvn/
+!/.mvn/wrapper/maven-wrapper.jar
+pom.xml.tag
+pom.xml.releaseBackup
+pom.xml.versionsBackup
+pom.xml.next
+release.properties
+dependency-reduced-pom.xml
+buildNumber.properties
+
+# === Gradle (if used instead of Maven) ===
+.gradle/
+build/
+!gradle-wrapper.jar
+
+# === IntelliJ IDEA ===
+.idea/
+*.iws
+*.iml
+*.ipr
+
+# === VS Code ===
+.vscode/
+
+# === Logs and temp ===
+*.log
+logs/
+*.tmp
+*.swp
+
+# === OS/System files ===
+.DS_Store
+Thumbs.db
+
+# === Spring Boot dev tools ===
+.spring-boot-devtools.properties
+
+# === Environment files ===
+.env
+.env.*
+application-dev.yml
+application-prod.yml
