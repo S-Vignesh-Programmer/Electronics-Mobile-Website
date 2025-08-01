@@ -47,14 +47,14 @@ const getApiBaseUrl = () => {
 
     // For your Vercel deployment, use your Render backend URL
     if (hostname === "electronics-mobile-website.vercel.app") {
-      return "https://your-render-app-name.onrender.com/api"; // Replace with actual URL
+      return "https://electronics-mobile-website.onrender.com//api"; // Replace with actual URL
     }
   }
 
   // Default fallback
   return isDevelopment
     ? "http://localhost:8080/api"
-    : "https://your-render-app-name.onrender.com/api"; // Replace with actual URL
+    : "https://electronics-mobile-website.onrender.com//api"; // Replace with actual URL
 };
 
 // API Configuration
