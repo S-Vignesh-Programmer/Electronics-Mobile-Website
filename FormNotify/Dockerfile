@@ -1,13 +1,24 @@
-FROM eclipse-temurin:17-jdk-alpine
+# Use official Maven image to build the application
+FROM maven:3.9.6-eclipse-temurin-17 as builder
 
 WORKDIR /app
 
 COPY pom.xml .
 COPY src ./src
 
-RUN apk add --no-cache maven
-RUN mvn clean install -DskipTests
+# Package the application
+RUN mvn clean package -DskipTests
 
+# Use a smaller runtime image
+FROM eclipse-temurin:17-jdk-alpine
+
+WORKDIR /app
+
+# Copy jar from builder stage
+COPY --from=builder /app/target/*.jar app.jar
+
+# Expose port (Spring Boot default)
 EXPOSE 8080
 
-CMD ["java", "-jar", "target/*.jar"]
+# Run the jar
+ENTRYPOINT ["java", "-jar", "app.jar"]
