@@ -1,24 +1,26 @@
-# Use official Maven image to build the application
-FROM maven:3.9.6-eclipse-temurin-17 as builder
+# Stage 1: Build the application
+FROM maven:3.9.6-eclipse-temurin-17 AS builder
 
 WORKDIR /app
 
+# Copy pom.xml and download dependencies
 COPY pom.xml .
+RUN mvn dependency:go-offline
+
+# Copy source files
 COPY src ./src
 
-# Package the application
+# Build the application and skip tests
 RUN mvn clean package -DskipTests
 
-# Use a smaller runtime image
+# Stage 2: Run the application
 FROM eclipse-temurin:17-jdk-alpine
 
 WORKDIR /app
 
-# Copy jar from builder stage
+# Copy the built JAR from the builder stage
 COPY --from=builder /app/target/*.jar app.jar
 
-# Expose port (Spring Boot default)
 EXPOSE 8080
 
-# Run the jar
 ENTRYPOINT ["java", "-jar", "app.jar"]
